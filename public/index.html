@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WhatsApp Web Multiple Sessions</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="change-password.html">Change Password</a></li>
+                <li><button id="logoutButton">Logout</button></li>
+            </ul>
+        </nav>
+    </header>
+    <body>
+    <div id="container1">
+    <div id="container">
+        <h1>WhatsApp Web</h1>
+        <button id="getQrBtn">Get QR Code</button>
+        <div id="qrContainer"></div>
+        <form id="sendMessageForm" style="display: none;">
+            <label for="csvFile">Upload CSV File:</label>
+            <input type="file" id="csvFile" name="csvFile" accept=".csv" required>
+            <br>
+            <label for="message">Message:</label>
+            <textarea id="message" name="message" required></textarea>
+            <br>
+            <label for="photo">Upload Photo:</label>
+            <input type="file" id="photo" name="photo" accept="image/*">
+            <br>
+            <button type="submit">Send Message</button>
+        </form>
+        <div id="responseContainer"></div>
+        <div id="loadingContainer" style="display: none;">
+            <img src="loading.gif" alt="Loading..." width="50" height="50">
+        </div>
+    </div>
+    </div>
+    <script>
+        document.getElementById('getQrBtn').addEventListener('click', () => {
+            console.log("123456")
+            document.getElementById('loadingContainer').style.display = 'block';
+            fetch('/qr')
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    if (data.qr) {
+                        document.getElementById('qrContainer').innerHTML = `<img src="${data.qr}" alt="QR Code">`;
+                        startPollingForStatus();
+                        document.getElementById('loadingContainer').style.display = 'none';
+
+                    } else {
+                        document.getElementById('qrContainer').innerText = data.message;
+                        document.getElementById('sendMessageForm').style.display = 'block';
+                        document.getElementById('loadingContainer').style.display = 'none';
+                    }
+                });
+        });
+        function startPollingForStatus() {
+            const intervalId = setInterval(() => {
+                fetch('/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.ready) {
+                            clearInterval(intervalId);
+
+                            document.getElementById('getQrBtn').style.display = 'none';
+
+                            document.getElementById('qrContainer').innerText = '';
+                            document.getElementById('sendMessageForm').style.display = 'block';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error fetching status:', err);
+                    });
+            }, 2000); // Poll every 2 seconds
+        }
+        function updateStatus(message, type, delay) {
+    var statusContainer = document.getElementById('responseContainer');
+    setTimeout(() => {
+        statusContainer.innerHTML = `<div class="${type}">${message}</div>`;
+    }, delay); // Clear status after 5 seconds
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/is-logged-in')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.loggedIn) {
+                        window.location.href = '/login.html';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking login status:', error);
+                    window.location.href = '/login.html';
+                });
+                
+    document.getElementById('logoutButton').addEventListener('click', function() {
+        console.log("LG");
+        const message = "NIL";
+                fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message})})
+                .then(response => {
+                    if (response.ok) {
+                        alert("Logged out!");
+                        window.location.href = 'login.html';
+                    } else {
+                        console.log("LG");
+                        console.error('Logout failed');
+                    }
+                }).catch(error => {
+                    console.error('Error during logout:', error);
+                });
+            });
+        document.getElementById('sendMessageForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var fileInput = document.getElementById('csvFile');
+            var message = document.getElementById('message').value;
+            var photoInput = document.getElementById('photo');
+            var photoFile = photoInput.files[0];
+            // Check if a file is selected
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Please select a CSV file.');
+                return;
+            }
+
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                var csvData = event.target.result;
+                var lines = csvData.split('\n');
+                for (var i = 0; i < lines.length; i++) {
+                    var phoneNumber = lines[i].trim(); // Assuming each line contains only the phone number
+                    if (phoneNumber) {
+                        //console.log(phoneNumber,message);
+                        var delay = i * 5000; // Adjust the delay here (in milliseconds)
+                        //console.log('Sending message after ' + delay + ' milliseconds');
+                        setTimeout(sendMessage.bind(null, phoneNumber, message,photoFile), delay);
+                        console.log(i+"=i")
+                        console.log(lines.length)
+                        updateStatus('Sending to '+(i+1)+' customers. Please do not press send again before completion', 'success',delay)
+                    }
+                }
+                    updateStatus('Message sent successfully!', 'success',lines.length*5000);
+                       
+            };
+            reader.readAsText(fileInput.files[0]);
+            
+            
+    function convertImageToBase64(file, callback) {
+    var reader = new FileReader();
+
+    reader.onload = function(event) {
+        var img = new Image();
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+            var pngBase64 = canvas.toDataURL('image/png');
+            callback(pngBase64);
+        };
+        img.src = event.target.result;
+    };
+
+    reader.readAsDataURL(file);
+}
+function sendMsg(number, message){
+    console.log("Sendmsg...")
+    console.log(number)
+    console.log(message)
+    fetch('/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ number, message})})
+            .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                    } else {
+                        return response.json();
+                    }
+                })
+            .then(data => {
+                console.log(data);
+                    if (data.error){
+                        document.getElementById('responseContainer').innerText = JSON.stringify(data.error).replaceAll(/"'/g,"");
+                        setTimeout(function(){
+   window.location.reload();
+}, 5000);
+                    }else{
+                    //document.getElementById('responseContainer').innerText = JSON.stringify(data);
+                    }
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+            });
+}
+
+function sendPIC(phoneNumber, photoFile){
+    fetch('/send-pic', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ phoneNumber, photoFile })})
+            .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    console.log(data);
+                    if (data.error){
+                        document.getElementById('responseContainer').innerText = JSON.stringify(data.error).replaceAll(/"'/g,"");
+                        setTimeout(function(){
+   window.location.reload();
+}, 5000);
+                    }else{
+                    //document.getElementById('responseContainer').innerText = JSON.stringify(data);
+                    }
+                })
+            .catch(error => {
+                console.error('Error sending message:', error);
+            });
+}
+
+        function sendMessage(phoneNumber, message, photoFile) {
+            if (photoFile&&message) {
+                convertImageToBase64(photoFile, function(base64String) {
+                    console.log(base64String); // or any other processing
+                    sendMsg(phoneNumber, message)
+                    sendPIC(phoneNumber, base64String)
+                });
+            } else if (message == null) {
+                convertImageToBase64(photoFile, function(base64String) {
+                    console.log(base64String); // or any other processing
+                    sendPIC(phoneNumber, base64String)
+                });
+            }else{
+                sendMsg(phoneNumber, message)
+            }
+        }
+    })
+    })
+    </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WhatsApp Web Multiple Sessions</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="container">
+        <h1>WhatsApp Web</h1>
+        <button id="getQrBtn">Get QR Code</button>
+        <div id="qrContainer"></div>
+        <form id="sendMessageForm" style="display: none;">
+            <label for="csvFile">Upload CSV File:</label>
+            <input type="file" id="csvFile" name="csvFile" accept=".csv" required>
+            <br>
+            <label for="message">Message:</label>
+            <textarea id="message" name="message" required></textarea>
+            <br>
+            <label for="photo">Upload Photo:</label>
+            <input type="file" id="photo" name="photo" accept="image/*">
+            <br>
+            <button type="submit">Send Message</button>
+        </form>
+        <div id="responseContainer"></div>
+        <div id="loadingContainer" style="display: none;">
+            <img src="loading.gif" alt="Loading..." width="50" height="50">
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('getQrBtn').addEventListener('click', () => {
+            document.getElementById('loadingContainer').style.display = 'block';
+            fetch('/qr')
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    if (data.qr) {
+                        document.getElementById('qrContainer').innerHTML = `<img src="${data.qr}" alt="QR Code">`;
+                        startPollingForStatus();
+                        document.getElementById('loadingContainer').style.display = 'none';
+
+                    } else {
+                        document.getElementById('qrContainer').innerText = data.message;
+                        document.getElementById('sendMessageForm').style.display = 'block';
+                        document.getElementById('loadingContainer').style.display = 'none';
+                    }
+                });
+        });
+        function startPollingForStatus() {
+            const intervalId = setInterval(() => {
+                fetch('/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.ready) {
+                            clearInterval(intervalId);
+
+                            document.getElementById('getQrBtn').style.display = 'none';
+
+                            document.getElementById('qrContainer').innerText = '';
+                            document.getElementById('sendMessageForm').style.display = 'block';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error fetching status:', err);
+                    });
+            }, 2000); // Poll every 2 seconds
+        }
+        function updateStatus(message, type, delay) {
+    var statusContainer = document.getElementById('responseContainer');
+    setTimeout(() => {
+        statusContainer.innerHTML = `<div class="${type}">${message}</div>`;
+    }, delay); // Clear status after 5 seconds
+}
+        document.getElementById('sendMessageForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const message = document.getElementById('message').value;
+            fetch('/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ number: phoneNumber, message: message })
+            })
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    console.log(data);
+                    if (data.error){
+                        document.getElementById('responseContainer').innerText = JSON.stringify(data.error).replaceAll(/"'/g,"");
+                    }else{
+                    document.getElementById('responseContainer').innerText = JSON.stringify(data);
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('responseContainer').innerText = err.message;
+                    //setTimeout(location.reload(),5000)
+                });
+        });
+    </script>
+</body>
+</html>

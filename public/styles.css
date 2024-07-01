@@ -1,0 +1,115 @@
+/* styles.css */
+
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: #e5ddd5;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #4a4a4a;
+}
+container1 {
+    display:flex;
+},
+h1 {
+    color: #075e54;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+header {
+    background-color: #25D366;
+    padding: 10px 20px;
+    width: 100%;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+header nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+header nav ul li {
+    margin-left: 20px;
+}
+
+header nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+header nav ul li a:hover {
+    text-decoration: underline;
+}
+#container, #loginContainer {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+button {
+    background-color: #25d366;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #1ebea5;
+}
+input[type="text"], input[type="password"], input[type="file"], textarea {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+#qrContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+#qrContainer img {
+    width: 200px;
+    height: 200px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+}
+
+input[type="text"], input[type="password"] {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#responseContainer {
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+#responseContainer.error {
+    color: red;
+}

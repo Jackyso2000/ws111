@@ -1,0 +1,26 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "username": "user1",
+      "password": "$2a$10$5/0EFCWv//N.s4G.kknHXu46wtYXChUCxh2q7EZ4TRDZRRrqZUJpW",
+      "phone": "6580303254"
+    },
+    {
+      "id": "2",
+      "username": "user2",
+      "password": "$2a$10$bM2lMpQM/ylNDLhwb7HSK.ba.i2efEC25jSYbuttOHz2wsP/wzzeq",
+      "phone": "6581235798"
+    }
+  ],
+  "clients": {
+    "1": {
+      "clientId": "client1",
+      "status": "disconnected"
+    },
+    "2": {
+      "clientId": "client2",
+      "status": "disconnected"
+    }
+  }
+}
