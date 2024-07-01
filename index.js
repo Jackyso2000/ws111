@@ -7,13 +7,7 @@
     const fs = require('fs');
     const app = express();
     const PORT = process.env.PORT || 3000;
-    const serverless = require("serverless-http");
-    const router = express.Router();
-    router.get("/", (req, res) => {
-        res.send("App is running..");
-    });
-app.use("/.netlify/functions/app", router);
-module.exports.handler = serverless(app);
+
     // In-memory user database (for simplicity)
 
     // In-memory store for WhatsApp clients
