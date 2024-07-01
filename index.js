@@ -7,6 +7,7 @@
     const fs = require('fs');
     const app = express();
     const PORT = process.env.PORT || 3000;
+    const puppeteer =require('puppeteer');
 
     // In-memory user database (for simplicity)
 
