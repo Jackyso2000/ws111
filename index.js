@@ -55,15 +55,15 @@
         }
     });
     // Endpoint for user login
-    app.post('/login', (req, res) => {
+    app.post('/login', async (req, res) => {
         console.log("loginnn")
         const { username, password } = req.body;
         //const user = users.find(u => u.username === username);
         const user1 = getUserById(username);
-        console.log(password,user1.password)
-        console.log("loginnn")
+        //console.log(password,user1.password)
+        //console.log(await bcrypt.compare(password, user1.password))
 
-        if (user1 && bcrypt.compare(password, user1.password)) {
+        if (user1 && await bcrypt.compare(password, user1.password)) {
             req.session.userId = user1.id;
             req.session.phone = user1.phone;
             req.session.username = user1.username;
@@ -90,8 +90,9 @@
             const client = new Client({
                 puppeteer: {
                 headless: true,
-                args: ["--no-sandbox"],
-                },
+                executablePath: '/usr/bin/google-chrome',
+                args: ['--no-sandbox', '--disable-gpu', '--disable-setuid-sandbox'],
+            },
                 webVersionCache: {
                 type: "remote",
                 remotePath:
