@@ -40,7 +40,13 @@
         if (req.session.userId) {
             return next();
         }
-        res.status(401).send('You need to log in first.');
+        return res.status(401).send('You need to log in first.');
+    }
+
+    function returnQR(req, res,qr) {
+        if(!res.headersSent){
+            return res.json({ qr: qr });
+        }    
     }
 
     function getUserById(userId) {
@@ -49,9 +55,9 @@
     }
     app.get('/is-logged-in', (req, res) => {
         if (req.session.userId) {
-            res.json({ loggedIn: true });
+            return res.json({ loggedIn: true });
         } else {
-            res.json({ loggedIn: false });
+            return res.json({ loggedIn: false });
         }
     });
     // Endpoint for user login
@@ -60,17 +66,14 @@
         const { username, password } = req.body;
         //const user = users.find(u => u.username === username);
         const user1 = getUserById(username);
-        //console.log(password,user1.password)
-        //console.log(await bcrypt.compare(password, user1.password))
-
         if (user1 && await bcrypt.compare(password, user1.password)) {
             req.session.userId = user1.id;
             req.session.phone = user1.phone;
             req.session.username = user1.username;
-            res.json({ message: 'Login successful' });
+            return res.json({ message: 'Login successful' });
             
         } else {
-            res.status(401).json({ error: 'Invalid username or password' });
+            return res.status(401).json({ error: 'Invalid username or password' });
         }
     });
 
@@ -80,11 +83,12 @@
             delete clients[req.session.clientId];            
             }
             req.session.destroy();
-            res.json({ message: 'Logged out' });
+            return res.json({ message: 'Logged out' });
     });
 
     // Endpoint to get QR code for login
     app.get('/qr', isAuthenticated, (req, res) => {
+        console.log(req.session)
         if (!req.session.clientId) {
             const clientId = Date.now().toString(); // Generate a unique client ID
             const client = new Client({
@@ -109,7 +113,7 @@
                     req.session.clientId = clientId;
                     req.session.clientReady = false;
                     req.session.save();
-                    res.json({ qr: url });
+                    returnQR(req,res,url)
                 });
             });
 
@@ -137,18 +141,18 @@
             });
             client.initialize();
         } else if (req.session.qrCode && !req.session.clientReady) {
-            res.json({ qr: req.session.qrCode });
+            return res.json({ qr: req.session.qrCode });
         } else {
-            res.json({ message: 'Already authenticated' });
+            return res.json({ message: 'Already authenticated' });
         }
     });
 
     app.get('/status', isAuthenticated, (req, res) => {
         if (req.session.clientReady) {
             console.log(req.session.clientReady+"niubioo");
-            res.json({ ready: true });
+            return res.json({ ready: true });
         } else {
-            res.json({ ready: false });
+            return res.json({ ready: false });
         }
     });
 
@@ -158,10 +162,10 @@
         console.log(client.info.wid.user!=req.session.phone);
         if(client.info.wid.user!=req.session.phone){
             console.log('Client was logged out');
-            res.json({ message: 'Phone number doesnt match our record' });
             delete clients[req.session.clientId];
+            return res.json({ message: 'Phone number doesnt match our record' });
         }else{
-            res.json({ message: 'success' });
+            return res.json({ message: 'success' });
         }
     });
     // Endpoint to send a message
@@ -170,19 +174,16 @@
         const client = clients[req.session.clientId];
         console.log(client.info.wid.user,req.session.phone);
         if(client.info.wid.user!=req.session.phone){
-            console.log("DESTROY!");
         req.session.destroy();
         delete clients[client];
-        res.status(500).json({ error: "User phone not same as recorded. Logging out..." });
+        return res.status(500).json({ error: "User phone not same as recorded. Logging out..." });
     }else{
-        console.log("YESYES");
-
         client.sendMessage(`${number}@c.us`, message)
             .then(response => {
-                res.json({ status: 'Message sent', response });
+                return   res.json({ status: 'Message sent', response });
             })
             .catch(err => {
-                res.status(500).json({ error: err.message });
+                return  res.status(500).json({ error: err.message });
             });
         }
     });
@@ -195,20 +196,17 @@
     const client = clients[req.session.clientId];
     console.log(client.info.wid.user!=req.session.phone);
     if(client.info.wid.user!=req.session.phone){
-        console.log("DESTROY!");
     req.session.destroy();
     delete clients[client];
-    res.status(500).json({ error: "User phone not same as recorded. Logging out..." });
+    return res.status(500).json({ error: "User phone not same as recorded. Logging out..." });
     }else{
-    console.log("YESYES");
-
     const media = new MessageMedia('image/png', photoFile.substring(22));
     await client.sendMessage(formattedNumber, media)
         .then(response => {
-            res.json({ status: 'Message sent', response });
+            return res.json({ status: 'Message sent', response });
         })
         .catch(err => {
-            res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: err.message });
         });
     }
 
@@ -223,14 +221,9 @@
 
         if (!user) {
             return res.status(401).json({ status: 'error', message: 'Unauthorized' });
-        }
-        console.log(bcrypt.compare(oldPassword, user.password))
-        console.log(newPassword, user.password)
-
-        if (bcrypt.compare(oldPassword, user.password)==false) {
+        }else if (bcrypt.compare(oldPassword, user.password)==false) {
             return res.status(400).json({ status: 'error', message: 'Incorrect old password' });
-        }
-        const saltRounds = 10;
+        }else{        const saltRounds = 10;
         var newHash = "";
         console.log("1234567890"+database.users.findIndex(user => user.username === userId));
 
@@ -247,13 +240,14 @@
             console.log(hash)
         });
 
-        res.json({ status: 'success', message: 'Password changed successfully' });
+        return res.json({ status: 'success', message: 'Password changed successfully' });}
+
     });
 
 
     // Serve login page
     app.get('/login', (req, res) => {
-        res.sendFile(__dirname + '/public/login.html');
+        return res.sendFile(__dirname + '/public/login.html');
     });
 
     // Start Express server
